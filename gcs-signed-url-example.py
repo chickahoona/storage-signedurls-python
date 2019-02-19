@@ -16,7 +16,7 @@
 
 import base64
 import datetime
-import md5
+import hashlib
 import sys
 import time
 
@@ -63,10 +63,10 @@ class CloudStorageURLSigner(object):
 
   def _Base64Sign(self, plaintext):
     """Signs and returns a base64-encoded SHA256 digest."""
-    shahash = SHA256.new(plaintext)
+    shahash = SHA256.new(plaintext.encode())
     signer = PKCS1_v1_5.new(self.key)
     signature_bytes = signer.sign(shahash)
-    return base64.b64encode(signature_bytes)
+    return base64.b64encode(signature_bytes).decode()
 
   def _MakeSignatureString(self, verb, path, content_md5, content_type):
     """Creates the signature string for signing according to GCS docs."""
@@ -115,7 +115,7 @@ class CloudStorageURLSigner(object):
     Returns:
       An instance of requests.Response containing the HTTP response.
     """
-    md5_digest = base64.b64encode(md5.new(data).digest())
+    md5_digest = base64.b64encode(hashlib.md5(data.encode()).digest()).decode()
     base_url, query_params = self._MakeUrl('PUT', path, content_type,
                                            md5_digest)
     headers = {}
@@ -148,15 +148,15 @@ def ProcessResponse(r, expected_status=200):
   Raises:
     SystemExit if the response code doesn't match expected_status.
   """
-  print '--- Request ---'
-  print r.request.url
-  for header, value in r.request.headers.iteritems():
-    print '%s: %s' % (header, value)
-  print '---------------'
-  print '--- Response (Status %s) ---' % r.status_code
-  print r.content
-  print '-----------------------------'
-  print
+  print('--- Request ---')
+  print(r.request.url)
+  for header, value in r.request.headers.items():
+    print('%s: %s' % (header, value))
+  print('---------------')
+  print('--- Response (Status %s) ---' % r.status_code)
+  print(r.content)
+  print('-----------------------------')
+  print()
   if r.status_code != expected_status:
     sys.exit('Exiting due to receiving %d status code when expecting %d.'
              % (r.status_code, expected_status))
